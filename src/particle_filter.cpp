@@ -62,17 +62,25 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     // Declarations
     double x0, y0, Oo;
     
+    // init randon gen
+    default_random_engine gen;
+    
+    // create a normal (Gaussian) distribution given std_pos vector
+    normal_distribution<double> dist_x(0, std_pos[0]);
+    normal_distribution<double> dist_y(0, std_pos[1]);
+    normal_distribution<double> dist_theta(0, std_pos[2]);
+    
     // Loop through particles, and propagate states
     for (int i = 0; i < num_particles; ++i) {
         
         // Put particle states in easier to read variable names
         x0 = particles[i].x;
         y0 = particles[i].y;
-        Oo = particles[i].theta;
+        Oo = particles[i].theta; 
         
-        particles[i].x = x0 + velocity/yaw_rate*(sin(Oo+yaw_rate*delta_t) - sin(Oo));
-        particles[i].y = y0 + velocity/yaw_rate*(cos(Oo) - cos(Oo+yaw_rate*delta_t));
-        particles[i].theta = Oo + yaw_rate*delta_t;
+        particles[i].x = x0 + velocity/yaw_rate*(sin(Oo+yaw_rate*delta_t) - sin(Oo)) + dist_x(gen);
+        particles[i].y = y0 + velocity/yaw_rate*(cos(Oo) - cos(Oo+yaw_rate*delta_t)) + dist_y(gen);
+        particles[i].theta = Oo + yaw_rate*delta_t + dist_theta(gen);
         
     }
 }
