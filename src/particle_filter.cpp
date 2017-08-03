@@ -25,6 +25,32 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 
+    num_particles = 100;
+    
+    // init randon gen
+    default_random_engine gen;
+    
+    // create a normal (Gaussian) distribution for x, y, theta
+    normal_distribution<double> dist_x(x, std[0]);
+    normal_distribution<double> dist_y(y, std[1]);
+    normal_distribution<double> dist_theta(theta, std[2]);
+
+    // Create particle
+    Particle p;
+    
+    for (int i = 0; i < num_particles; ++i) {
+        p.id = i;
+        p.x = dist_x(gen);
+        p.y = dist_y(gen);
+        p.theta = dist_theta(gen);
+        p.weight = 1.0; 
+        // NOTE: weights may need to be at the pf level, not ind particles
+        
+        particles.push_back(p);
+     
+        //cout << "Sample " << p.id << " " << p.x << " " << p.y << " " << p.theta << endl;
+        //cout << "Sample " << particles[i].id << endl;
+    }
 }
 
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
@@ -33,7 +59,24 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
 
+    // Declarations
+    double x0, y0, Oo;
+    
+    // Loop through particles, and propagate states
+    for (int i = 0; i < num_particles; ++i) {
+        
+        // Put particle states in easier to read variable names
+        x0 = particles[i].x;
+        y0 = particles[i].y;
+        Oo = particles[i].theta;
+        
+        particles[i].x = x0 + velocity/yaw_rate*(sin(Oo+yaw_rate*delta_t) - sin(Oo));
+        particles[i].y = y0 + velocity/yaw_rate*(cos(Oo) - cos(Oo+yaw_rate*delta_t));
+        particles[i].theta = Oo + yaw_rate*delta_t;
+        
+    }
 }
+
 
 void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
 	// TODO: Find the predicted measurement that is closest to each observed measurement and assign the 
