@@ -14,6 +14,7 @@
 #include <sstream>
 #include <string>
 #include <iterator>
+#include <vector>
 
 #include "particle_filter.h"
 
@@ -106,6 +107,74 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   and the following is a good resource for the actual equation to implement (look at equation 
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
+    
+    cout << "size of particles =" << particles.size() << endl;
+    
+    // Find nearest landmark for each observation 
+    for (int i=0; i<particles.size(); i++) {
+        
+        // use local variables for particle states for ease of reading
+        float x_p = particles[i].x;
+        float y_p = particles[i].y;
+        float theta = particles[i].theta;
+        
+        // convert observations to map frame
+        // based on lesson 14.13
+        for (int j=0; j<observations.size(); j++) {
+            float x_map = observations[j].x + x_p*cos(theta) + y_p*sin(theta);
+            float y_map = observations[j].y - x_p*sin(theta) + y_p*cos(theta);
+            
+            // Initialize closest range parameter with big number
+            float range_closest = 100000000000000.0;
+            float x_closest = 100000000000000.0;
+            float y_closest = 100000000000000.0;
+            
+            // find the closest landmark for the observation
+            for (int k=0; k<map_landmarks.landmark_list.size(); k++) {    
+           
+                // Calculate distance to each landmark
+                float range_k = dist(x_map, y_map, map_landmarks.landmark_list[k].x_f, map_landmarks.landmark_list[k].y_f); 
+                
+                // if current closest landmark, save 
+                if (range_k < range_closest) {
+                    range_closest = range_k;
+                    float x_closest = map_landmarks.landmark_list[k].x_f;
+                    float y_closest = map_landmarks.landmark_list[k].y_f;             
+                }
+            }
+                
+            // Use closest landmark to find MVG prob for each observation
+            float Q = -(pow(x_map-x_closest,2.0)/(2*pow(std_landmark[0],2.0)) + pow((y_map-y_closest),2.0)/pow(2*std_landmark[1],2.0));
+            float MVGaussian = 1 / (2*M_PI*std_landmark[0]*std_landmark[1]) * exp(Q);
+                
+            
+                
+            // update weights for particle 
+            
+            // calcualate the MV-Gaussian probability
+            
+            // mulitplty all the probabilities together (for all observations) 
+            // to get the total probabilty for the particle
+            
+        }
+        
+    
+    // vector<LandmarkObs> predicted;
+    //
+    // for landmark in map:
+    //    if landmark is within 'sensor_range' of the particle:
+    //        add landmark to 'predicted' vector
+    //
+    // dataAssociation(predicted, observations)
+    
+    // change weights based on multi-variate Gaussian
+    // x,y are states
+    // mu_x and mu_y are the reference (landmark)
+    // sigmas are uncertainties
+    // calculation is for each particle
+    // Q = -((x-mu_x)**2/(2*sig_x**2) + (y-mu_y)**2/(2*sig_y**2))
+    // MVGaussian = 1 / (2*pi*sig_x*sig_y) * exp(Q)
+    }
 }
 
 void ParticleFilter::resample() {
