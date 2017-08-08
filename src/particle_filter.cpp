@@ -113,6 +113,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     // Find nearest landmark for each observation 
     for (int i=0; i<particles.size(); i++) {
         
+        // Init MVG_mult for weights
+        double MVG_mult = 1;
+        
         // use local variables for particle states for ease of reading
         float x_p = particles[i].x;
         float y_p = particles[i].y;
@@ -133,7 +136,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
             for (int k=0; k<map_landmarks.landmark_list.size(); k++) {    
            
                 // Calculate distance to each landmark
-                float range_k = dist(x_map, y_map, map_landmarks.landmark_list[k].x_f, map_landmarks.landmark_list[k].y_f); 
+                float range_k = dist(x_map, y_map, map_landmarks.landmark_list[k].x_f, \
+                                     map_landmarks.landmark_list[k].y_f); 
                 
                 // if current closest landmark, save 
                 if (range_k < range_closest) {
@@ -144,36 +148,17 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
             }
                 
             // Use closest landmark to find MVG prob for each observation
-            float Q = -(pow(x_map-x_closest,2.0)/(2*pow(std_landmark[0],2.0)) + pow((y_map-y_closest),2.0)/pow(2*std_landmark[1],2.0));
+            float Q = -(pow(x_map-x_closest,2.0)/(2*pow(std_landmark[0],2.0)) + \
+                        pow((y_map-y_closest),2.0)/pow(2*std_landmark[1],2.0));
             float MVGaussian = 1 / (2*M_PI*std_landmark[0]*std_landmark[1]) * exp(Q);
                 
-            
-                
-            // update weights for particle 
-            
-            // calcualate the MV-Gaussian probability
-            
             // mulitplty all the probabilities together (for all observations) 
             // to get the total probabilty for the particle
-            
+            MVG_mult *= MVGaussian;                
         }
         
-    
-    // vector<LandmarkObs> predicted;
-    //
-    // for landmark in map:
-    //    if landmark is within 'sensor_range' of the particle:
-    //        add landmark to 'predicted' vector
-    //
-    // dataAssociation(predicted, observations)
-    
-    // change weights based on multi-variate Gaussian
-    // x,y are states
-    // mu_x and mu_y are the reference (landmark)
-    // sigmas are uncertainties
-    // calculation is for each particle
-    // Q = -((x-mu_x)**2/(2*sig_x**2) + (y-mu_y)**2/(2*sig_y**2))
-    // MVGaussian = 1 / (2*pi*sig_x*sig_y) * exp(Q)
+        // update particle weight
+        particles[i].weight = MVG_mult;        
     }
 }
 
