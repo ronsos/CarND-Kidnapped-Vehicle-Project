@@ -160,13 +160,23 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         // update particle weight
         particles[i].weight = MVG_mult;        
     }
+    // need to normalize particle weights???
 }
 
 void ParticleFilter::resample() {
 	// TODO: Resample particles with replacement with probability proportional to their weight. 
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
-
+    
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::discrete_distribution<> d(weights.begin(), weights.end());
+    //std::discrete_distribution<> d(particles.weight.begin(), particles.weight.end());
+    //std::map<int, int> m;
+    for(int n=0; n<num_particles; ++n) {
+        //particles_new.push_back(particles[d(gen)]);
+        particles.push_back(particles[d(gen)]);
+    }
 }
 
 Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y)
