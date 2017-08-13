@@ -26,7 +26,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 
-    num_particles = 100;
+    num_particles = 10;
     
     // init randon gen
     default_random_engine gen;
@@ -178,12 +178,12 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
             Q = -(pow(x_map-x_closest,2.0)/(2*pow(std_landmark[0],2.0)) + \
                         pow((y_map-y_closest),2.0)/(2*(pow(std_landmark[1],2.0))));
             MVGaussian = 1 / (2*M_PI*std_landmark[0]*std_landmark[1]) * exp(Q);
-            cout << "Obs ID: " << id_closest << "; Weight = " << MVGaussian << endl;
+            //cout << "Obs ID: " << id_closest << "; Weight = " << MVGaussian << endl;
             MVG_mult *= MVGaussian; 
            
             
         }
-        cout << "Particle Weight = " << MVG_mult << endl;
+        //cout << "Particle Weight = " << MVG_mult << endl;
         
         // update particle weight
         particles[i].weight = MVG_mult; 
@@ -224,7 +224,7 @@ void ParticleFilter::resample() {
     
     // Print updated particle states 
     for(int n=0; n<num_particles; ++n) {
-        cout << "ParID: " << particles[n].id << ", x = " << particles[n].x << ", y = " << particles[n].y << ", theta = " << particles[n].theta << endl;
+        //cout << "ParID: " << particles[n].id << ", x = " << particles[n].x << ", y = " << particles[n].y << ", theta = " << particles[n].theta << endl;
     }
     
  
