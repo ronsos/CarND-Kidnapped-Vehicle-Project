@@ -26,7 +26,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 
-    num_particles = 10;
+    num_particles = 100;
     
     // init randon gen
     default_random_engine gen;
@@ -66,7 +66,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
-
+    
     // Declarations
     double x0, y0, Oo;
     
@@ -80,7 +80,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     
     // Loop through particles, and propagate states
     for (int i = 0; i < num_particles; ++i) {
-        
+               
         // Put particle states in easier to read variable names
         x0 = particles[i].x;
         y0 = particles[i].y;
@@ -88,8 +88,8 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
         
         particles[i].x = x0 + velocity/yaw_rate*(sin(Oo+yaw_rate*delta_t) - sin(Oo)) + dist_x(gen);
         particles[i].y = y0 + velocity/yaw_rate*(cos(Oo) - cos(Oo+yaw_rate*delta_t)) + dist_y(gen);
-        particles[i].theta = Oo + yaw_rate*delta_t + dist_theta(gen);
-        
+        particles[i].theta = Oo + yaw_rate*delta_t + dist_theta(gen);       
+       
     }
 }
 
@@ -119,6 +119,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     float x_p, y_p, theta;
     float x_map, y_map;
     float range_closest, x_closest, y_closest, range_k;
+    int id_closest;
     double Q, MVGaussian, MVG_mult;
     
     // For each particle, find weights  
@@ -135,11 +136,16 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         // convert observations to map frame
         // based on lesson 14.13
         for (int j=0; j<observations.size(); j++) {
-           
-            //x_map = observations[j].x + x_p*cos(theta) + y_p*sin(theta);
-            //y_map = observations[j].y - x_p*sin(theta) + y_p*cos(theta);
-            x_map = x_p + observations[j].x*cos(theta) + observations[j].y*sin(theta);
-            y_map = y_p - observations[j].x*sin(theta) + observations[j].y*cos(theta);
+            
+            //cout << "Obs: " << j << "  x= " << observations[j].x << "  y= " << observations[j].y << endl;
+            
+            // Transform observation to map frame
+            //x_map = x_p + observations[j].x*cos(theta) + observations[j].y*sin(theta);
+            //y_map = y_p - observations[j].x*sin(theta) + observations[j].y*cos(theta);
+            
+            /* from class vid https://www.youtube.com/watch?list=PLAwxTw4SYaPnfR7TzRZN-uxlxGbqxhtm2&v=-3HI3Iw3Z9g */
+            x_map = x_p + (observations[j].x*cos(theta) - observations[j].y*sin(theta));
+            y_map = y_p + (observations[j].x*sin(theta) + observations[j].y*cos(theta));
             
             //cout << "x_map = " << x_map << ", Y_map = " << y_map << endl;
             
@@ -157,6 +163,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
                 // if current closest landmark, save 
                 if (range_k < range_closest) {
                     range_closest = range_k;
+                    id_closest = k+1;
+                   // cout << "Replaced!  ID: " << id_closest << endl;
                     x_closest = map_landmarks.landmark_list[k].x_f;
                     y_closest = map_landmarks.landmark_list[k].y_f;  
                   
@@ -164,17 +172,22 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
             }
             //cout << "range k =" << range_k << endl;
             //cout << "range closest =" << range_closest << endl;
+            //cout << "Obs ID: " << id_closest << "; x= " << x_closest << "; y= " << y_closest << "; range= " << range_closest << endl;
                 
             // Use closest landmark to find MVG prob for each observation
             Q = -(pow(x_map-x_closest,2.0)/(2*pow(std_landmark[0],2.0)) + \
                         pow((y_map-y_closest),2.0)/(2*(pow(std_landmark[1],2.0))));
             MVGaussian = 1 / (2*M_PI*std_landmark[0]*std_landmark[1]) * exp(Q);
+            cout << "Obs ID: " << id_closest << "; Weight = " << MVGaussian << endl;
             MVG_mult *= MVGaussian; 
+           
             
         }
+        cout << "Particle Weight = " << MVG_mult << endl;
         
         // update particle weight
-        particles[i].weight = MVG_mult;  
+        particles[i].weight = MVG_mult; 
+        //cout << particles[i].id << ", weight = " << particles[i].weight << endl;
         
     }
     
@@ -190,7 +203,7 @@ void ParticleFilter::resample() {
     for(int j = 0; j < num_particles; j++){
         Particle p = particles[j];
         weights.push_back(p.weight);
-        cout << particles[j].id << ", weight = " << p.weight <<endl;
+        //cout << particles[j].id << ", weight = " << p.weight <<endl;
     }
     
     // Initialize variables and generator
@@ -211,7 +224,7 @@ void ParticleFilter::resample() {
     
     // Print updated particle states 
     for(int n=0; n<num_particles; ++n) {
-        cout << particles[n].id << ", x = " << particles[n].x << ", y = " << particles[n].y << ", theta = " << particles[n].theta << endl;
+        cout << "ParID: " << particles[n].id << ", x = " << particles[n].x << ", y = " << particles[n].y << ", theta = " << particles[n].theta << endl;
     }
     
  
